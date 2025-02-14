@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>İstanbul Müzeleri Haritası</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      padding: 0;
+      margin: 0;
+    }
+
+    html,
+    body,
+    #map {
+      height: 100%;
+      width: 100%;
+    }
+
+    .star-rating {
+      color: gold;
+      font-size: 18px;
+    }
+
+    .popup-content {
+      font-size: 14px;
+    }
+
+    .rating-text {
+      font-size: 14px;
+      margin-top: 5px;
+    }
+
+    .nav-box {
+      padding: 10px;
+      margin: 5px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      cursor: pointer;
+      display: inline-block;
+    }
+
+    .nav-box:hover {
+      background-color: #f0f0f0;
+    }
+  </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg bg-body-tertiary">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">Navbar</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+              <div class="nav-box" onclick="homeClicked()">Home</div>
+            </li>
+            <li class="nav-item">
+              <div class="nav-box" onclick="linkClicked()">Link</div>
+            </li>
+            <li class="nav-item dropdown">
+              <div class="nav-box" onclick="dropdownClicked()">Dropdown</div>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#">Action</a></li>
+                <li><a class="dropdown-item" href="#">Another action</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="#">Something else here</a></li>
+              </ul>
+            </li>
+            <li class="nav-item">
+              <div class="nav-box" onclick="disabledClicked()">Disabled</div>
+            </li>
+          </ul>
+          <form class="d-flex" role="search" onsubmit="searchClicked(event)">
+            <input class="form-control me-2" type="search" id="searchBox" placeholder="Search" aria-label="Search">
+            <button class="btn btn-outline-success" type="submit">Search</button>
+          </form>
+        </div>
+      </div>
+    </nav>
+  
+    <script>
+      // Home button click event
+      function homeClicked() {
+        alert("Home clicked!");
+        // You can add further functionality here, like navigating to home
+      }
+  
+      // Link button click event
+      function linkClicked() {
+        alert("Link clicked!");
+        // Add functionality for the Link button
+      }
+  
+      // Dropdown button click event
+      function dropdownClicked() {
+        alert("Dropdown clicked!");
+        // You can show or modify dropdown actions here
+      }
+  
+      // Disabled button click event
+      function disabledClicked() {
+        alert("Disabled button clicked!");
+        // Add any functionality you'd like for the disabled button
+      }
+  
+      // Search button click event
+      function searchClicked(event) {
+        event.preventDefault(); // Prevent form submission
+
+        // Get the search input value
+        const searchValue = document.getElementById("searchBox").value.trim().toLowerCase();
+
+        // Check if the search input is empty
+        if (!searchValue) {
+        alert("Please enter a search term.");
+        return;
+        }
+
+        // Filter the GeoJSON features based on the search input
+        const filteredFeatures = geojsonData.features.filter(feature => {
+        // Assuming the GeoJSON has a property called "name"
+        const name = feature.properties.name.toLowerCase();
+        return name.includes(searchValue);
+        });
+
+        // Clear existing markers/layers from the map
+        if (geojsonLayer) {
+        geojsonLayer.clearLayers();
+        }
+
+        // Add the filtered features to the map
+        geojsonLayer = L.geoJSON(filteredFeatures, {
+        pointToLayer: function (feature, latlng) {
+            return L.marker(latlng).bindPopup(`<b>${feature.properties.name}</b>`);
+        }
+        }).addTo(mymap);
+
+        // Optionally, zoom to the bounds of the filtered features
+        if (filteredFeatures.length > 0) {
+        const bounds = geojsonLayer.getBounds();
+        mymap.fitBounds(bounds);
+        } else {
+        alert("No results found for: " + searchValue);
+        }
+    }
+  
+      // Adding popular sites to the dropdown
+      document.addEventListener("DOMContentLoaded", function() {
+        const dropdownMenu = document.querySelector(".dropdown-menu");
+        const popularSites = [
+          { name: "Google", link: "https://www.google.com" },
+          { name: "Facebook", link: "https://www.facebook.com" },
+          { name: "Twitter", link: "https://www.twitter.com" }
+        ];
+        
+        
+        
+        popularSites.forEach(site => {
+          const item = document.createElement("li");
+          item.innerHTML = `<a class="dropdown-item" href="${site.link}" target="_blank">${site.name}</a>`;
+          dropdownMenu.appendChild(item);
+        });
+      });
+    </script>
+  </body>
+  
+  <!-- Harita için div -->
+  <div id="map"></div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Harita oluşturma
+    var mymap = L.map('map').setView([41.0082, 28.9784], 13); // İstanbul'un merkezi
+
+    // OpenStreetMap katmanı ekleme
+    var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+      attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(mymap);
+
+    // Kategorilere göre sembol ve renkler
+    var categoryStyles = {
+      Sanat: { color: 'blue', icon: '🎨' },
+      Tarihi: { color: 'red', icon: '🏛️' },
+      Sarnıç: { color: 'green', icon: '💧' }
+    };
+
+     // Müze bilgileri ve kategorileri
+     var museums = [
+      {
+        name: "Anadolu Hisarı Müzesi",
+        location: [41.0825, 29.0667],
+        address: "İstanbul ili, Beykoz İlçesi, Anadolu Hisarı Mahallesi’nde yer almaktadır.",
+        phone: "0216 333 52 30",
+        hours: "10:00-18:00",
+        days: "Salı-Pazar",
+        rating: 4.5,
+        category: "Tarihi",
+        price: "İndirimli Bilet: 25 TL, Tam Bilet: 85 TL, Yabancı Turist: 300 TL"
+      },
+
+      {
+        name: "Aşiyan Müzesi",
+        location: [41.08264477725658, 29.053580158182076],
+        address: "Bebek, Aşiyan Yolu, No:15 34342 Beşiktaş/İstanbul",
+        phone: "0212 263 69 86",
+        hours: "09:00 - 17:00",
+        days: "Salı-Pazar",
+        rating: 4.8,
+        category: "Tarihi",
+        price: "İndirimli Bilet: 25 TL, Tam Bilet: 50 TL, Yabancı Turist: 150 TL "
+      },
+      {
+        name: "Atatürk Müzesi",
+        location: [41.056520714680964, 28.98718851161992],
+        address: "Meşrutiyet, Halaskargazi Cd. No:140, 34363 Şişli/İstanbul",
+        phone: "0212 233 47 23",
+        hours: "09:00 - 17:00",
+        days: "Salı-Pazar",
+        rating: 4.7,
+        category: "Tarihi",
+        price: "Ücretsiz"
+      },
+      {
+        name: "Baruthane Müze",
+        location: [40.976145253967545, 28.860016938038683],
+        address: "Ataköy 2-5-6. Kısım Mahallesi, Rauf Orbay Caddesi Bakırköy/İstanbul",
+        phone: "0212 249 95 65",
+        hours: "10:00 - 20:00",
+        days: "Salı-Pazar",
+        rating: 4.4,
+        category: "Tarihi",
+        price: "Ücretsiz"
+      },
+      {
+        name: "İtfaiye Müzesi",
+        location: [41.04462753836984, 29.011620336222805],
+        address: "Yıldız, Çitlembik Yokuşu, Horoz Sk. No:1, 34349 Beşiktaş/İstanbul",
+        phone: "0212 259 91 24",
+        hours: "09:00 - 17:00",
+        days: "Salı-Pazar",
+        rating: 4.3,
+        category: "Tarihi",
+        price: "Ücretsiz"
+      },
+      {
+        name: "Müze Gazhane | İklim Müzesi",
+        location: [40.996230356960346, 29.04272715599123],
+        address: "Hasanpaşa,Kurbağalıdere Cd. No:125, 34722 Kadıköy/İstanbul",
+        phone: "0212 222 28 82",
+        hours: "09:00 - 18:00",
+        days: "Salı-Pazar",
+        rating: 4.6,
+        category: "Tarihi",
+        price: "Ücretsiz"
+      },
+
+      {
+        name: "Tekfur Sarayı Müzesi",
+        location: [41.033839908236885, 28.940477067636404],
+        address: "Ayvansaray mh. Şişhane cd. Fatih Ayvansaray, 34087 Fatih/İstanbul",
+        phone: "0212 525 61 30",
+        hours: "09:00 - 17:00",
+        days: "Salı-Pazar",
+        rating: 4.5,
+        category: "Tarihi",
+        price: "İndirimli Bilet: 15 TL, Tam Bilet: 25 TL, Yabancı Turist: 50 TL"
+      },
+
+
+      {
+        name: "İstanbul Oyuncak Müzesi",
+        location: [40.97607777265996, 29.070755210436314],
+        address: "Ömerpaşa, Dr. Zeki Paşa Cd. No:4, 34774 Kadıköy/İstanbul",
+        phone: "0216 359 45 90",
+        hours: "09:00 - 17:00",
+        days: "Salı-Pazar",
+        rating: 4.6,
+        category: "Tarihi",
+        price: "İndirimli Bilet: 140 TL, Tam Bilet: 240 TL"
+      },
+      {
+        name: "Panorama 1453 Tarih Müzesi",
+        location: [41.019020456251646, 28.920648054051288],
+        address: "Topkapı, 1453. Sok. Fatih/İstanbul",
+        phone: "0212 654 50 00",
+        hours: "09:00 - 18:00",
+        days: "Salı-Pazar",
+        rating: 4.5,
+        category: "Tarihi",
+        price: "İndirimli Bilet: 55 TL, Tam Bilet: 165 TL, Yabancı Turist: 715 TL"
+      },
+      {
+        name: "Rahmi M. Koç Müzesi",
+        location: [41.04199203540085, 28.94910130858946],
+        address: "Hasköy, Rahmi Koç Müzesi, 34445 Beyoğlu/İstanbul",
+        phone: "0212 369 66 60",
+        hours: "09:30 - 17:30",
+        days: "Salı-Pazar",
+        rating: 4.8,
+        category: "Tarihi",
+        price: "İndirimli Bilet: 180 TL, Tam Bilet: 350 TL"
+      },
+      {
+        name: "İstanbul Arkeoloji Müzesi",
+        location: [41.01630276883513, 28.983755065836753],
+        address: "Osmanlı, 34122 Fatih/İstanbul",
+        phone: "0212 520 77 40",
+        hours: "09:00 - 19:00",
+        days: "Hergün",
+        rating: 4.6,
+        category: "Tarihi",
+        price: "İndirimli Bilet: Ücretsiz, Tam Bilet: 550 TL"
+      },
+
+    ];
+
+    var sarnic = [
+      {
+        name: "Gülhane Sarnıcı",
+        location: [41.01390640304077, 28.981721373456917],
+        address: "Hocapaşa Mah. Gülhane Parkı içi, Fatih/İstanbul",
+        phone: "0212 249 95 65",
+        hours: "10:00 - 19:00",
+        days: "Salı-Pazar",
+        rating: 4.5,
+        category: "Sarnıç",
+        price: "Ücretsiz"
+      },
+      {
+        name: "Yerebatan Sarnıcı Müzesi",
+        location: [41.00843254796398, 28.977856538799458],
+        address: "Alemdar, Yerebatan Cad. 1/3, Fatih / İstanbul",
+        phone: "0212 233 47 23",
+        hours: "09:00 - 19:00",
+        days: "Hergün",
+        rating: 4.6,
+        category: "Sarnıç",
+        price: "İndirimli Bilet: 50 TL, Tam Bilet: 200 TL, Yabancı Turist: 900 TL"
+      },
+      {
+        name: "Bebek Sarnıcı Sanat Galerisi",
+        location: [41.07894445776872, 29.045404496279172],
+        address: "Bebek, Cevdet Paşa Cd. No:71, 34342 Beşiktaş/İstanbul",
+        phone: "0212 249 95 65",
+        hours: "10:00 - 18:00",
+        days: "Salı-Pazar",
+        rating: 4.6,
+        category: "Sarnıç",
+        price: "Ücretsiz"
+      },
+    ];
+
+    var sanat = [
+      {
+        name: "Artİstanbul Feshane",
+        location: [41.04391883826925, 28.937255075390613],
+        address: "Nişanca, 34050 Eyüpsultan/ İstanbul",
+        phone: "0212 900 00 00",
+        hours: "10:00 - 19:30",
+        days: "Salı-Pazar",
+        rating: 4.6,
+        category: "Sanat",
+        price: "Ücretsiz"
+      },
+      {
+        name: "Casa Botter Sanat Galerisi",
+        location: [41.03013054841701, 28.974851936530502],
+        address: "Şahkulu, İstiklal Cd. No:235, 34421 Beyoğlu/İstanbul",
+        phone: "0212 240 23 23",
+        hours: "10:00 - 18:00",
+        days: "Salı-Pazar",
+        rating: 4.6,
+        category: "Sanat",
+        price: "Ücretsiz"
+      },
+      {
+        name: "Cendere Sanat Müzesi",
+        location: [41.109487487172956, 28.989405975706624],
+        address: "Huzur Mah. Cendere Cad. No:128 Sarıyer /İstanbul",
+        phone: "0212 449 43 76",
+        hours: "09:00 - 18:00",
+        days: "Salı-Pazar",
+        rating: 4.8,
+        category: "Sanat",
+        price: "Ücretsiz"
+      },
+
+      {
+        name: "Haliç Sanat",
+        location: [41.026850221653476, 28.95854162224667],
+        address: "Mevlanakapı Cad. Melek Hatun Mahallesi, No: 1, Fatih / İstanbul",
+        phone: "0212 233 47 23",
+        hours: "10:00 - 18:00",
+        days: "Salı-Pazar",
+        rating: 4.4,
+        category: "Sanat",
+        price: "none"
+      },
+      {
+        name: "İstanbul Tasarım Müzesi",
+        location: [41.01512671017009, 28.965483440649592],
+        address: "Süleymaniye, Mimar Sinan Cd., 34116 Fatih/İstanbul",
+        phone: "0212 236 24 60",
+        hours: "10:00 - 19:00",
+        days: "Salı-Pazar",
+        rating: 4.2,
+        category: "Sanat",
+        price: "Ücretsiz"
+      },
+
+      {
+        name: "Mecidiyeköy Sanat Galerisi",
+        location: [41.06668607261687, 28.995072069487993],
+        address: "Mecidiyeköy Meydanı, Şişli",
+        phone: "0212 249 09 45",
+        hours: "10:00 - 19:00",
+        days: "Salı-Pazar",
+        rating: 4.7,
+        category: "Sanat",
+        price: "Ücretsiz"
+      },
+      {
+        name: "Pera Müzesi",
+        location: [41.03197496985431, 28.975025608588766],
+        address: "Tepebaşı, Meşrutiyet Cd. No:65, 34430 Beyoğlu/İstanbul",
+        phone: "0212 334 99 00",
+        hours: "10:00 - 18:00",
+        days: "Salı-Pazar",
+        rating: 4.6,
+        category: "Sanat",
+        price: "İndirimli Bilet: 100 TL, Tam Bilet: 200 TL"
+      },
+      {
+        name: "Sakıp Sabancı Müzesi",
+        location: [41.10570917047169, 29.056912208593882],
+        address: "Emirgan, Sakıp Sabancı Cd. No:42, 34467 Sarıyer/İstanbul",
+        phone: "0212 277 22 40",
+        hours: "10:00 - 18:00",
+        days: "Salı-Pazar",
+        rating: 4.7,
+        category: "Sanat",
+        price: "İndirimli Bilet: 60, Tam Bilet: 90 TL"
+      },
+      {
+        name: "İllüzyon Müzesi",
+        location: [41.0350, 28.9778],
+        address: "Hüseyinağa, İstiklal Cd. No:131, 34435 Beyoğlu/İstanbul",
+        phone: "0212 244 66 00",
+        hours: "10:00 - 20:00",
+        days: "Hergün",
+        rating: 4.9,
+        category: "Sanat",
+        price: "İndirimli Bilet: 270, Tam Bilet: 390 TL"
+      },
+    ];
+
+
+    // Yıldız puanını oluşturan fonksiyon
+    function getStarRating(rating) {
+      var stars = '';
+      for (var i = 1; i <= 5; i++) {
+        if (i <= rating) {
+          stars += '★';
+        } else {
+          stars += '☆';
+        }
+      }
+      return stars;
+    }
+
+    // Katmanları oluştur
+    var museumsLayer = L.layerGroup();
+    var sanatLayer = L.layerGroup();
+    var sarnicLayer = L.layerGroup();
+
+    var baseMaps = {
+      "OpenStreetMap": osm
+    };
+
+    var overlayMaps = {
+      "Müzeler": museumsLayer,
+      "Sanat": sanatLayer,
+      "Sarnıç": sarnicLayer
+    };
+
+    var layerControl = L.control.layers(baseMaps, overlayMaps).addTo(mymap);
+
+    // Müzeleri haritaya ekleme
+    museums.forEach(function (museum) {
+      var categoryStyle = categoryStyles[museum.category];
+      var icon = L.divIcon({
+        className: 'custom-icon',
+        html: `<div style="color: ${categoryStyle.color}; font-size: 24px;">${categoryStyle.icon}</div>`
+      });
+
+      var marker = L.marker(museum.location, { icon: icon }).addTo(museumsLayer);
+      var popupContent = `
+          <div class="popup-content">
+            <b>${museum.name}</b><br>
+            <div class="rating-text">
+              <span>${museum.rating}</span>
+              <span class="star-rating">${getStarRating(museum.rating)}</span>
+            </div>
+            ${museum.address}<br>
+            Telefon: ${museum.phone}<br>
+            Çalışma Saatleri: ${museum.hours}<br>
+            Çalışma Günleri: ${museum.days}<br>
+          </div>
+          <div class="price-text">
+            ${museum.price}
+            </div>
+        `;
+      marker.bindPopup(popupContent);
+    });
+
+    // Sanat müzelerini haritaya ekleme
+    sanat.forEach(function (sanat) {
+      var categoryStyle = categoryStyles[sanat.category];
+      var icon = L.divIcon({
+        className: 'custom-icon',
+        html: `<div style="color: ${categoryStyle.color}; font-size: 24px;">${categoryStyle.icon}</div>`
+      });
+
+      var marker = L.marker(sanat.location, { icon: icon }).addTo(sanatLayer);
+      var popupContent = `
+          <div class="popup-content">
+            <b>${sanat.name}</b><br>
+            <div class="rating-text">
+              <span>${sanat.rating}</span>
+              <span class="star-rating">${getStarRating(sanat.rating)}</span>
+            </div>
+            ${sanat.address}<br>
+            Telefon: ${sanat.phone}<br>
+            Çalışma Saatleri: ${sanat.hours}<br>
+            Çalışma Günleri: ${sanat.days}<br>
+          </div>
+            <div class="price-text">
+                ${sanat.price}
+                </div>
+        `;
+      marker.bindPopup(popupContent);
+    });
+
+    // Sarnıçları haritaya ekleme
+    sarnic.forEach(function (sarnic) {
+      var categoryStyle = categoryStyles[sarnic.category];
+      var icon = L.divIcon({
+        className: 'custom-icon',
+        html: `<div style="color: ${categoryStyle.color}; font-size: 24px;">${categoryStyle.icon}</div>`
+      });
+
+      var marker = L.marker(sarnic.location, { icon: icon }).addTo(sarnicLayer);
+      var popupContent = `
+          <div class="popup-content">
+            <b>${sarnic.name}</b><br>
+            <div class="rating-text">
+              <span>${sarnic.rating}</span>
+              <span class="star-rating">${getStarRating(sarnic.rating)}</span>
+            </div>
+            ${sarnic.address}<br>
+            Telefon: ${sarnic.phone}<br>
+            Çalışma Saatleri: ${sarnic.hours}<br>
+            Çalışma Günleri: ${sarnic.days}<br>
+          </div>
+            <div class="price-text">
+                ${sarnic.price}
+                </div>
+        `;
+      marker.bindPopup(popupContent);
+    });
+
+    // Katmanları haritaya ekle
+    museumsLayer.addTo(mymap);
+    sanatLayer.addTo(mymap);
+    sarnicLayer.addTo(mymap);
+
+    // Örnek fonksiyonlar
+    function homeClicked() {
+      console.log("Home kutusuna tıklandı!");
+    }
+
+    function linkClicked() {
+      console.log("Link kutusuna tıklandı!");
+    }
+
+    function dropdownClicked() {
+      console.log("Dropdown kutusuna tıklandı!");
+    }
+
+    function disabledClicked() {
+      console.log("Disabled kutusuna tıklandı!");
+    }
+  </script>
+</body>
+
+</html>
